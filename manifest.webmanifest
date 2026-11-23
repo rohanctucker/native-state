@@ -1,0 +1,10 @@
+{
+  "name": "Native State",
+  "short_name": "Native State",
+  "description": "Hold real AlphaFold protein structures in your hands.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0A1F3A",
+  "theme_color": "#0A1F3A",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

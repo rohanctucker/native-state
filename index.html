@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Native State: hold real AlphaFold proteins</title>
+  <meta name="description" content="Pick up, spin and unfold real protein structures from the AlphaFold database, with your hands on camera or your fingers. Every protein comes with sourced facts.">
+  <meta name="theme-color" content="#0A1F3A">
+  <meta property="og:title" content="Native State">
+  <meta property="og:description" content="Hold real AlphaFold protein structures in your hands.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preload" href="fonts/sofia-sans-extra-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/atkinson-hyperlegible-next-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <canvas id="scene" tabindex="0" role="img" aria-label="3D protein model. Drag to turn it."></canvas>
+  <canvas id="overlay" aria-hidden="true"></canvas>
+  <video id="cam" playsinline muted aria-hidden="true"></video>
+
+  <header class="top">
+    <div class="brand">
+      <a class="wordmark" href="./">Native State</a>
+      <button class="link-button" id="how-open" type="button">How it works</button>
+    </div>
+    <div class="search" id="search">
+      <button class="search-toggle" id="search-toggle" type="button" aria-label="Search proteins" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <form class="search-form" id="search-form" role="search" autocomplete="off">
+        <label class="visually-hidden" for="q">Search proteins</label>
+        <input id="q" type="search" placeholder="Search any protein, like insulin or TP53" spellcheck="false"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results">
+        <ul id="results" class="results" role="listbox" aria-label="Matching proteins" hidden></ul>
+      </form>
+    </div>
+  </header>
+
+  <p id="hint" class="hint" aria-live="polite"></p>
+  <p id="sr" class="visually-hidden" aria-live="polite"></p>
+  <p id="toast" class="toast" role="status" aria-live="polite"></p>
+
+  <aside id="fact" class="fact" aria-live="polite" hidden>
+    <p class="fact-head"><span id="fact-title"></span><span id="fact-count" class="fact-count"></span></p>
+    <p id="fact-body" class="fact-body"></p>
+    <p id="fact-source" class="fact-source"></p>
+  </aside>
+
+  <div class="dock" id="dock">
+    <section class="specimen" id="specimen" aria-labelledby="name">
+      <p id="status" class="status" aria-live="polite" hidden></p>
+      <h1 id="name">Loading</h1>
+      <p id="meta" class="meta"></p>
+      <p id="summary" class="summary"></p>
+      <div class="bar bar-mini" id="bar-mini" aria-hidden="true"></div>
+      <div class="actions">
+        <button class="pill primary" id="surprise" type="button">Surprise me</button>
+        <button class="pill" id="explore-open" type="button">Explore</button>
+        <button class="pill" id="details-open" type="button">About it</button>
+        <button class="pill view-toggle" id="view-open" type="button" aria-expanded="false" aria-controls="side">View</button>
+      </div>
+    </section>
+
+    <aside class="side" id="side" aria-label="View settings">
+      <div class="sheet-head">
+        <h2>View</h2>
+        <button class="link-button" id="view-close" type="button">Done</button>
+      </div>
+      <div class="control">
+        <span class="control-label" id="look-label">Look</span>
+        <div class="seg" role="radiogroup" aria-labelledby="look-label" id="look">
+          <button type="button" role="radio" data-style="ribbon" aria-checked="true">Ribbon</button>
+          <button type="button" role="radio" data-style="atoms" aria-checked="false">Atoms</button>
+          <button type="button" role="radio" data-style="glow" aria-checked="false">Glow</button>
+        </div>
+      </div>
+      <div class="control">
+        <span class="control-label" id="cam-label">Camera</span>
+        <div class="seg" role="radiogroup" aria-labelledby="cam-label" id="cams">
+          <button type="button" role="radio" data-cam="off" aria-checked="true">Off</button>
+          <button type="button" role="radio" data-cam="user" aria-checked="false">Front</button>
+          <button type="button" role="radio" data-cam="environment" aria-checked="false" hidden>Back</button>
+        </div>
+      </div>
+      <label class="control unfold" for="unfold">
+        <span class="control-label">Unfold</span>
+        <input id="unfold" type="range" min="0" max="1000" value="0" step="1">
+      </label>
+      <figure class="key" id="key-conf">
+        <figcaption>How sure AlphaFold is</figcaption>
+        <div class="bar" id="bar" role="img" aria-label="Confidence breakdown"></div>
+        <ul class="legend" id="legend"></ul>
+      </figure>
+      <figure class="key" id="key-atoms" hidden>
+        <figcaption>Atoms</figcaption>
+        <ul class="legend elements" id="elements"></ul>
+        <p class="key-note">Parts AlphaFold is unsure about wobble.</p>
+      </figure>
+      <button class="pill" id="ar-open" type="button" hidden>See it in your room</button>
+    </aside>
+  </div>
+
+  <dialog id="explore" class="drawer" aria-labelledby="explore-title">
+    <div class="drawer-head">
+      <h2 id="explore-title">Explore</h2>
+      <form method="dialog"><button class="link-button" type="submit">Close</button></form>
+    </div>
+    <p class="drawer-lede">There are over 200 million proteins in AlphaFold’s database. Start anywhere.</p>
+    <button class="pill primary wide" id="explore-surprise" type="button">Surprise me</button>
+    <div id="collections" class="collections"></div>
+    <section class="held" id="held" hidden>
+      <h3>Proteins you’ve held</h3>
+      <p class="held-count" id="held-count"></p>
+      <ul class="items" id="held-list"></ul>
+    </section>
+  </dialog>
+
+  <dialog id="details" class="drawer" aria-labelledby="details-title">
+    <div class="drawer-head">
+      <h2 id="details-title">About it</h2>
+      <form method="dialog"><button class="link-button" type="submit">Close</button></form>
+    </div>
+    <div id="details-body" class="details-body"></div>
+    <div class="details-actions">
+      <button class="pill" id="share" type="button">Share this protein</button>
+    </div>
+    <p class="credit" id="details-credit"></p>
+  </dialog>
+
+  <dialog id="intro" class="intro" aria-labelledby="intro-title">
+    <h2 id="intro-title">Every living thing is built from proteins.</h2>
+    <p>They’re tiny machines, each folded from one long chain. Their shape decides what they do. In 2020 an AI called AlphaFold learned to predict those shapes, and its database now holds over 200 million of them.</p>
+    <p>Pick one up.</p>
+    <div class="intro-actions">
+      <button class="pill primary" id="intro-go" type="button">Start with this one</button>
+      <button class="pill" id="intro-surprise" type="button">Surprise me</button>
+    </div>
+  </dialog>
+
+  <dialog id="ar" class="intro ar" aria-labelledby="ar-title">
+    <h2 id="ar-title">See it in your room</h2>
+    <div class="ar-stage" id="ar-stage"></div>
+    <p id="ar-note">Tap the button on the model to place it in your room. It will be about 30 cm across, roughly 60 million times bigger than the real thing.</p>
+    <form method="dialog"><button class="pill" type="submit">Close</button></form>
+  </dialog>
+
+  <dialog id="how" class="drawer" aria-labelledby="how-title">
+    <div class="drawer-head">
+      <h2 id="how-title">How it works</h2>
+      <form method="dialog"><button class="link-button" type="submit">Close</button></form>
+    </div>
+    <div class="details-body">
+      <p>Every protein here is a real prediction from the AlphaFold Protein Structure Database, made by Google DeepMind and EMBL-EBI. AlphaFold’s creators shared the 2024 Nobel Prize in Chemistry.</p>
+      <h3>Holding one</h3>
+      <ul>
+        <li>Drag, or pinch with one hand on camera, to turn it. Each time you grab it, a new fact pops up.</li>
+        <li>Spread two fingers, or pinch with both hands and pull apart, to unfold it into its sequence. Let go and it folds back.</li>
+        <li>Tap any point to see which amino acid it is.</li>
+      </ul>
+      <h3>The three looks</h3>
+      <p><strong>Ribbon</strong> is how scientists usually draw proteins: spirals are helices, flat arrows are strands. <strong>Atoms</strong> shows every atom at its real size, close to how a protein would look if you could see it. <strong>Glow</strong> traces the backbone as a line of light.</p>
+      <h3>The colors</h3>
+      <p>In Ribbon and Glow, color is AlphaFold’s confidence for each amino acid, from 0 to 100. Blue parts are probably right. Yellow and orange parts are guesses, and often have no fixed shape in real life, so here they drift.</p>
+      <h3>Unfolding</h3>
+      <p>A protein is a chain of amino acids, written as letters. Pull one apart and you see that chain. In the early 1960s Christian Anfinsen showed that the sequence alone holds the shape, and won the 1972 Nobel Prize in Chemistry. The animation here is a simple blend between the two shapes, not a folding simulation.</p>
+      <h3>Where the facts come from</h3>
+      <p>Facts come straight from UniProt, where scientists curate what is known about each protein, from DrugBank through UniProt, and from Wikipedia. Sizes and amino acid counts are measured from the structure itself. The short stories for the featured proteins were written for this site.</p>
+      <h3>Your camera</h3>
+      <p>Hand tracking runs on your device with Google’s MediaPipe. Your video never leaves your browser.</p>
+      <p class="credit">Structures from <a href="https://alphafold.ebi.ac.uk/" target="_blank" rel="noopener">AlphaFold DB</a> (EMBL-EBI and Google DeepMind), licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Annotations from <a href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt</a> (CC BY 4.0). Summaries from <a href="https://en.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0).</p>
+    </div>
+  </dialog>
+</body>
+</html>
