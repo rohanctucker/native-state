@@ -59,19 +59,21 @@
   <p id="sr" class="visually-hidden" aria-live="polite"></p>
   <p id="toast" class="toast" role="status" aria-live="polite"></p>
 
-  <aside id="fact" class="fact" aria-live="polite" hidden>
-    <p class="fact-head"><span id="fact-title"></span><span id="fact-count" class="fact-count"></span></p>
-    <p id="fact-body" class="fact-body"></p>
-    <p id="fact-source" class="fact-source"></p>
-  </aside>
-
   <div class="dock" id="dock">
     <section class="specimen" id="specimen" aria-labelledby="name">
       <p id="status" class="status" aria-live="polite" hidden></p>
-      <h1 id="name">Loading</h1>
-      <p id="meta" class="meta"></p>
-      <p id="summary" class="summary"></p>
-      <div class="bar bar-mini" id="bar-mini" aria-hidden="true"></div>
+      <div class="specimen-info" id="specimen-info">
+        <h1 id="name">Loading</h1>
+        <p id="meta" class="meta"></p>
+        <p id="summary" class="summary"></p>
+        <div class="bar bar-mini" id="bar-mini" aria-hidden="true"></div>
+        <!-- The fact that pops up when you grab the protein. It sits over this block, never over the protein. -->
+        <aside id="fact" class="fact" aria-live="polite" hidden>
+          <p class="fact-head"><span id="fact-title"></span><span id="fact-count" class="fact-count"></span></p>
+          <p id="fact-body" class="fact-body"></p>
+          <p id="fact-source" class="fact-source"></p>
+        </aside>
+      </div>
       <div class="actions">
         <button class="pill primary" id="surprise" type="button">Surprise me</button>
         <button class="pill" id="explore-open" type="button">Explore</button>

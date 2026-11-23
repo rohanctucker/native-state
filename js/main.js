@@ -65,7 +65,7 @@ const ui = {
   viewOpen: $('#view-open'), viewClose: $('#view-close'),
   look: $('#look'), cams: $('#cams'), unfold: $('#unfold'), arOpen: $('#ar-open'),
   hint: $('#hint'), sr: $('#sr'), toast: $('#toast'),
-  fact: $('#fact'), factTitle: $('#fact-title'), factCount: $('#fact-count'), factBody: $('#fact-body'), factSource: $('#fact-source'),
+  specimenInfo: $('#specimen-info'), fact: $('#fact'), factTitle: $('#fact-title'), factCount: $('#fact-count'), factBody: $('#fact-body'), factSource: $('#fact-source'),
   search: $('#search'), searchToggle: $('#search-toggle'), form: $('#search-form'), q: $('#q'), results: $('#results'),
   explore: $('#explore'), exploreSurprise: $('#explore-surprise'), collections: $('#collections'),
   held: $('#held'), heldCount: $('#held-count'), heldList: $('#held-list'),
@@ -750,17 +750,36 @@ function nextFact() {
   ui.factBody.textContent = f.body;
   ui.factSource.textContent = `Source: ${f.source}`;
   ui.fact.hidden = false;
+  ui.specimenInfo.classList.add('showing-fact');
   fact.visible = true;
   fact.shownAt = performance.now();
-  positionFact();
+  fitFact();
   requestAnimationFrame(() => ui.fact.classList.add('on'));
 }
 
 function hideFact(now = false) {
   fact.visible = false;
   ui.fact.classList.remove('on');
+  ui.specimenInfo.classList.remove('showing-fact');
   if (now) ui.fact.hidden = true;
   else setTimeout(() => { if (!fact.visible) ui.fact.hidden = true; }, 300);
+}
+
+// The card lives in the info panel. If a fact is long, shrink its text a little, and only as a
+// last resort fade out the end, so the card never grows up into the space where the protein is.
+function fitFact() {
+  if (!fact.visible) return;
+  const body = ui.factBody;
+  body.classList.remove('clamped');
+  body.style.maxHeight = '';
+  const avail = ui.specimenInfo.clientHeight - 12;
+  for (const size of narrow() ? [16, 15, 14, 13.5] : [16.5, 15.5, 14.5]) {
+    body.style.fontSize = `${size}px`;
+    if (ui.fact.scrollHeight <= avail) return;
+  }
+  const chrome = ui.fact.scrollHeight - body.scrollHeight;
+  body.style.maxHeight = `${Math.max(42, avail - chrome)}px`;
+  body.classList.add('clamped');
 }
 
 ui.fact.addEventListener('click', () => {
@@ -768,28 +787,6 @@ ui.fact.addEventListener('click', () => {
   clearTimeout(fact.timer);
   fact.timer = setTimeout(() => hideFact(), 8000);
 });
-
-function positionFact() {
-  if (!fact.visible || !P) return;
-  const cw = ui.fact.offsetWidth || 320;
-  const ch = ui.fact.offsetHeight || 140;
-  const pad = 16;
-  let x;
-  let y;
-  if (narrow()) {
-    x = (W - cw) / 2;
-    y = free.top + 2;
-  } else {
-    const box = P.screenBox;
-    const roomR = W - pad - box.maxX;
-    const roomL = box.minX - pad;
-    if (roomR >= cw + 24 || roomR >= roomL) x = Math.min(W - pad - cw, Math.max(box.maxX + 24, W * 0.5 + 40));
-    else x = Math.max(pad, box.minX - 24 - cw);
-    y = clamp(box.minY, free.top + 6, free.bottom - ch - 6);
-  }
-  ui.fact.style.left = `${Math.round(x)}px`;
-  ui.fact.style.top = `${Math.round(y)}px`;
-}
 
 function section(title, body, source) {
   const frag = document.createDocumentFragment();
@@ -1034,6 +1031,7 @@ function measureFree() {
     ui.hint.style.maxWidth = '';
   }
   if (P) layoutPage(P);
+  fitFact();
 }
 
 function resize() {
@@ -1181,7 +1179,6 @@ function frame(now) {
   updateCamera(dt, e);
   composer.render();
   drawOverlay(e);
-  if (fact.visible) positionFact();
 }
 
 /* ------------------------------------------------------------------ */
@@ -1220,8 +1217,7 @@ function drawOverlay(e) {
   if (P) {
     P.group.updateMatrixWorld();
     const box = screenBox();
-    let labelAlpha = (1 - smoothstep(0.05, 0.35, e)) * smoothstep(0.75, 1, P.reveal);
-    if (fact.visible && narrow()) labelAlpha *= 0.3;
+    const labelAlpha = (1 - smoothstep(0.05, 0.35, e)) * smoothstep(0.75, 1, P.reveal);
     if (labelAlpha > 0.01) drawLabels(box, labelAlpha);
     const seqAlpha = smoothstep(0.82, 1, e);
     if (seqAlpha > 0.01) drawSequence(seqAlpha);
@@ -1244,14 +1240,12 @@ function drawLabels(box, alpha) {
   }
   const cx = (box.minX + box.maxX) / 2;
   const gap = W < 600 ? 12 : 26;
-  // Keep labels clear of the fact card on wide screens.
-  const factRect = fact.visible && !narrow() ? ui.fact.getBoundingClientRect() : null;
   for (const it of items) {
     it.side = it.ax < cx ? -1 : 1;
     const leftCol = box.minX - gap;
     const rightCol = box.maxX + gap;
     const roomL = leftCol - 8 - it.w >= 10;
-    const roomR = rightCol + 8 + it.w <= W - 10 && !(factRect && factRect.left < rightCol + it.w + 8);
+    const roomR = rightCol + 8 + it.w <= W - 10;
     if (it.side < 0 && !roomL && roomR) it.side = 1;
     else if (it.side > 0 && !roomR && roomL) it.side = -1;
     it.colX = it.side < 0 ? Math.max(leftCol, 10 + it.w + 8) : Math.min(rightCol, W - 10 - it.w - 8);

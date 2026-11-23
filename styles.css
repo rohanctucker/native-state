@@ -112,16 +112,21 @@ button { font: inherit; color: inherit; }
 }
 .toast.on { opacity: 1; }
 
-/* The fact that pops up when you grab the protein */
+/* The fact that pops up when you grab the protein. It takes the place of the name and
+   summary in the info panel, so it never covers the protein or your hand. */
+.specimen-info { position: relative; }
+.specimen-info > :not(.fact) { transition: opacity 0.2s ease; }
+.specimen-info.showing-fact > :not(.fact) { opacity: 0; visibility: hidden; }
 .fact {
-  position: fixed; z-index: 2; left: 0; top: 0;
-  width: min(21rem, calc(100vw - 32px));
-  margin: 0; padding: 14px 16px 12px;
+  position: absolute; z-index: 1; left: 0; bottom: 12px;
+  width: min(100%, 34rem);
+  margin: 0; padding: 14px 16px 12px; overflow: hidden;
   background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
   cursor: pointer; opacity: 0; transform: translateY(6px);
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 .fact.on { opacity: 1; transform: none; }
+.fact-body.clamped { overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent); mask-image: linear-gradient(to bottom, #000 72%, transparent); }
 .fact p { margin: 0; }
 .fact-head { display: flex; justify-content: space-between; gap: 12px; font: 600 1.0625rem/1.2 var(--label); margin-bottom: 6px !important; }
 .fact-count { color: var(--film-dim); font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -315,7 +320,8 @@ dialog::backdrop { background: rgba(4, 16, 31, 0.6); }
 
   .drawer { width: 100vw; border-left: 0; padding: calc(var(--safe-t) + 18px) var(--pad) calc(var(--safe-b) + 24px); }
   .drawer h2 { font-size: 2.25rem; }
-  .fact { width: calc(100vw - var(--pad) * 2); }
+  .fact { width: 100%; }
+  .specimen-info { min-height: 11.75rem; display: flex; flex-direction: column; justify-content: flex-end; }
 }
 
 @media (max-width: 380px) {
