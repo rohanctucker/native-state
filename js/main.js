@@ -12,7 +12,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   ACCESSION, AF_ENTRY, UNIPROT, UNIPROT_ENTRY, UserError,
   fetchStructure, fetchUniprot, fetchWikipedia,
-  summaryText, buildFacts, buildMarks, firstSentences, plainLocations, organismLine, isUncharacterized,
+  summaryText, buildFacts, buildMarks, firstSentences, plainLocations, organismLine, isUncharacterized, tissueSentence,
 } from './data.js';
 import { assignSecondary, Ribbon, Atoms, ELEMENTS, patchWobble } from './geometry.js';
 import { COLLECTIONS, CREATURES, collectionItems, surpriseCandidates, heldList, recordHeld } from './explore.js';
@@ -84,7 +84,16 @@ const narrow = () => innerWidth <= 760;
 /* ------------------------------------------------------------------ */
 
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+} catch (err) {
+  ui.name.textContent = 'This browser can’t show 3D';
+  ui.status.hidden = false;
+  ui.status.className = 'status error';
+  ui.status.textContent = 'Native State needs WebGL. Try the latest Chrome, Safari or Firefox, or turn on hardware acceleration in your browser settings.';
+  throw err;
+}
 renderer.setPixelRatio(DPR);
 renderer.setClearColor(0x000000, 0);
 renderer.toneMappingExposure = 1.0;
@@ -154,7 +163,7 @@ const BackgroundShader = {
   `,
 };
 
-const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: coarse ? 2 : 4 });
 const composer = new EffectComposer(renderer, target);
 const mainPass = new RenderPass(scene, camera);
 const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.62, 0.5, 0.18);
@@ -426,7 +435,7 @@ function ensureRibbon(prot) {
     c.set(BANDS[prot.band[i]].solid).multiplyScalar(ao[i]);
     colors.set([c.r, c.g, c.b], i * 3);
   }
-  const ribbon = new Ribbon(prot.n, prot.ss, colors, prot.amp);
+  const ribbon = new Ribbon(prot.n, prot.ss, colors, prot.amp, prot.n > 900 ? 4 : 6);
   ribbon.update(prot.base, 0);
   const mesh = new THREE.Mesh(ribbon.geometry, ribbonMat);
   mesh.frustumCulled = false;
@@ -455,7 +464,7 @@ function burialCA(xyz, n) {
 
 function ensureAtoms(prot) {
   if (prot.atomsRep) return prot.atomsRep;
-  const rep = new Atoms(prot.atoms, prot.folded, prot.amp, atomMat);
+  const rep = new Atoms(prot.atoms, prot.folded, prot.amp, atomMat, coarse || prot.atoms.length > 3500 ? 1 : 2);
   rep.update(prot.base);
   prot.group.add(rep.mesh);
   prot.atomsRep = rep;
@@ -826,19 +835,19 @@ function renderDetails() {
   body.append(h);
 
   if (feat) body.append(section('Why it’s famous', feat.fact));
-  if (info && isUncharacterized(info)) body.append(section('Never studied', 'No scientist has studied this protein yet. AlphaFold predicted its shape anyway, from its sequence alone.', 'UniProt'));
+  if (info && isUncharacterized(info)) body.append(section('Never studied', 'No one has worked out what this protein does yet. AlphaFold predicted its shape anyway, from its sequence alone.', 'UniProt'));
   if (wiki) body.append(section('In short', firstSentences(wiki.extract, 4, 600), 'Wikipedia'));
   if (info?.functions?.length) body.append(section('What it does', info.functions.slice(0, 2).map((t) => firstSentences(t, 4, 520)).join(' '), 'UniProt'));
   if (info?.locations?.length || info?.tissue) {
     const where = info.locations.length ? `It works ${plainLocations(info.locations).join(' and ')}.` : '';
-    body.append(section('Where it works', `${where} ${info.tissue ? firstSentences(info.tissue, 2, 300) : ''}`.trim(), 'UniProt'));
+    body.append(section('Where it works', `${where} ${info.tissue ? tissueSentence(info.tissue) : ''}`.trim(), 'UniProt'));
   }
   if (info?.diseases?.length) body.append(section('Linked to', list(info.diseases.slice(0, 10)), 'UniProt'));
   if (info?.drugs?.length) body.append(section('Medicines and compounds that act on it', list(info.drugs.slice(0, 12)), 'DrugBank, via UniProt'));
   if (info) {
     body.append(section('Seen in a lab', info.pdbCount
-      ? `Its real shape has been measured ${fmt(info.pdbCount)} ${info.pdbCount === 1 ? 'time' : 'times'} and shared in the Protein Data Bank.`
-      : 'No one has measured its shape in a lab. This AlphaFold prediction is the best look anyone has.', 'UniProt'));
+      ? `All or part of its real shape has been measured ${fmt(info.pdbCount)} ${info.pdbCount === 1 ? 'time' : 'times'} and shared in the Protein Data Bank.`
+      : 'No one has measured its shape in a lab yet. This AlphaFold prediction is the best look anyone has.', 'UniProt'));
   }
   const sizeFact = P.facts.find((f) => f.title === 'How big it is');
   if (sizeFact) body.append(section('How big it is', sizeFact.body));
@@ -1730,7 +1739,7 @@ ui.arOpen.addEventListener('click', async () => {
   try {
     await loadModelViewer();
     if (arState.acc !== P.acc) {
-      const tmp = new Ribbon(P.n, P.ss || (P.ss = assignSecondary(P.folded, P.n)), new Float32Array(P.n * 3), new Float32Array(P.n));
+      const tmp = new Ribbon(P.n, P.ss || (P.ss = assignSecondary(P.folded, P.n)), new Float32Array(P.n * 3), new Float32Array(P.n), P.n > 900 ? 4 : 6);
       tmp.update(P.folded, 0);
       if (arState.url) URL.revokeObjectURL(arState.url);
       arState = { acc: P.acc, url: await exportGLB({ ribbon: tmp, band: P.band, colors: BANDS.map((b) => b.solid), radius: P.radius }) };
@@ -1931,11 +1940,4 @@ setTimeout(() => {
 }, 2400);
 
 window.nativeState = {
-  async testExportAR() {
-    const tmp = new Ribbon(P.n, P.ss || (P.ss = assignSecondary(P.folded, P.n)), new Float32Array(P.n * 3), new Float32Array(P.n));
-    tmp.update(P.folded, 0);
-    const url = await exportGLB({ ribbon: tmp, band: P.band, colors: BANDS.map((b) => b.solid), radius: P.radius });
-    const blob = await (await fetch(url)).blob();
-    return blob.size;
-  },
   loadProtein, surprise, get protein() { return P; }, screenOf: (i) => (P ? project(i, {}) : null), setStyle: (s) => { style = s; applyStyle(); } };

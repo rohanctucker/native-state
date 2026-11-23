@@ -236,7 +236,7 @@ const LOCATIONS = [
   [/chloroplast|plastid|thylakoid/i, 'in chloroplasts, where plants capture sunlight'],
   [/endoplasmic reticulum/i, 'in the endoplasmic reticulum, where many proteins are made'],
   [/golgi/i, 'in the Golgi, the cell’s shipping center'],
-  [/lysosome|vacuole/i, 'in the cell’s recycling compartments'],
+  [/lysosome|vacuole/i, 'in lysosomes or vacuoles, the cell’s recycling and storage compartments'],
   [/peroxisome/i, 'in peroxisomes, which break down fats'],
   [/synapse/i, 'at synapses, where nerve cells talk'],
   [/cytoskeleton|microtubule|actin/i, 'along the cell’s internal skeleton'],
@@ -266,7 +266,7 @@ export const plainLigand = (name) => LIGANDS[name] || name;
 
 const LINEAGE = [
   ['Serpentes', 'a snake'], ['Scorpiones', 'a scorpion'], ['Araneae', 'a spider'], ['Conus', 'a cone snail'],
-  ['Insecta', 'an insect'], ['Arachnida', 'an arachnid'], ['Mollusca', 'a mollusk'], ['Cnidaria', 'a relative of jellyfish and corals'],
+  ['Insecta', 'an insect'], ['Arachnida', 'an arachnid'], ['Mollusca', 'a mollusk'], ['Cnidaria', 'a cnidarian, the group that includes jellyfish and corals'],
   ['Aves', 'a bird'], ['Mammalia', 'a mammal'], ['Amphibia', 'an amphibian'], ['Actinopterygii', 'a fish'],
   ['Chondrichthyes', 'a shark or ray'], ['Lepidosauria', 'a reptile'], ['Testudines', 'a turtle'], ['Crocodylia', 'a crocodilian'],
   ['Nematoda', 'a roundworm'], ['Viridiplantae', 'a plant'], ['Fungi', 'a fungus'],
@@ -275,7 +275,7 @@ const LINEAGE = [
 
 export function organismLine(org) {
   if (!org) return null;
-  if (org.taxonId === 9606) return 'Your own body makes this one.';
+  if (org.taxonId === 9606) return 'A human protein. The instructions for making it are in our DNA.';
   const kind = LINEAGE.find(([k]) => org.lineage.includes(k))?.[1];
   const nameBits = org.common ? `${org.common} (${org.scientific})` : org.scientific;
   return kind ? `Made by ${nameBits}, ${kind}.` : `Made by ${nameBits}.`;
@@ -283,7 +283,15 @@ export function organismLine(org) {
 
 export function isUncharacterized(info) {
   if (!info) return false;
-  return /uncharacteri[sz]ed|hypothetical/i.test(info.name || '') || (!info.reviewed && !info.functions.length);
+  return /uncharacteri[sz]ed|hypothetical protein/i.test(info.name || '') && !info.functions.length;
+}
+
+const PROPER = /^(Purkinje|Leydig|Sertoli|Schwann|Langerhans|Kupffer|Paneth|M[uü]ller|Golgi|Bowman|Merkel|Meissner|Clara|Brunner|Peyer)/;
+export function tissueSentence(text) {
+  const t = firstSentences(text, 1, 150);
+  if (/^(expressed|detected|found|present|abundant|ubiquitous|specifically|predominantly|mainly|highly|widely|strongly|exclusively|restricted|produced|secreted|synthesized|localized)/i.test(t)) return t;
+  const lower = !PROPER.test(t) && /^[A-Z][a-z]/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t;
+  return `Found in ${lower}`;
 }
 
 const AMINO_NAMES = {
@@ -297,7 +305,7 @@ const joinList = (items) => (items.length <= 1 ? items.join('') : `${items.slice
 
 export function summaryText({ info, wiki, feat }) {
   if (feat) return feat.fact;
-  if (info && isUncharacterized(info)) return 'No one has studied this protein yet. AlphaFold predicted its shape anyway, from its sequence alone.';
+  if (info && isUncharacterized(info)) return 'No one has worked out what this protein does yet. AlphaFold predicted its shape anyway, from its sequence alone.';
   if (info?.functions?.length) return firstSentences(info.functions[0], 2, 220);
   if (wiki) return firstSentences(wiki.extract, 2, 220);
   return null;
@@ -310,14 +318,14 @@ export function buildFacts({ prot, info, wiki, feat }) {
 
   if (feat) add('Why it’s famous', feat.fact, 'Written for Native State');
   if (info && isUncharacterized(info)) {
-    add('Never studied', 'No scientist has studied this protein yet. AlphaFold predicted its shape anyway, from its string of letters alone. You might be one of the first people to look at it.', 'UniProt');
+    add('Never studied', 'No one has worked out what this protein does yet. AlphaFold predicted its shape anyway, from its string of letters alone.', 'UniProt');
   }
   if (info?.functions?.length) add('What it does', firstSentences(info.functions[0], 2, 260), 'UniProt');
   else if (wiki) add('What it is', firstSentences(wiki.extract, 2, 260), 'Wikipedia');
 
   if (info?.locations?.length || info?.tissue) {
     const where = info.locations.length ? `It works ${joinList(plainLocations(info.locations))}.` : '';
-    const tissue = info.tissue ? ` ${firstSentences(info.tissue, 1, 150)}` : '';
+    const tissue = info.tissue ? ` ${tissueSentence(info.tissue)}` : '';
     add('Where it works', `${where}${tissue}`.trim(), 'UniProt');
   }
   if (info?.diseases?.length) {
@@ -332,8 +340,8 @@ export function buildFacts({ prot, info, wiki, feat }) {
   }
   if (info) {
     add('Seen in a lab', info.pdbCount > 0
-      ? `Scientists have measured its real shape ${fmt(info.pdbCount)} ${info.pdbCount === 1 ? 'time' : 'times'}, with X-rays, electron microscopes or magnets. AlphaFold predicts the same kind of shape in seconds.`
-      : 'No one has measured this protein’s shape in a lab. This AlphaFold prediction is the best look anyone has.', 'UniProt');
+      ? `Scientists have measured all or part of its real shape ${fmt(info.pdbCount)} ${info.pdbCount === 1 ? 'time' : 'times'}, using X-rays, electron microscopes or magnets. AlphaFold predicted this shape from its sequence alone.`
+      : 'No one has measured this protein’s shape in a lab yet. This AlphaFold prediction is the best look anyone has.', 'UniProt and the Protein Data Bank');
   }
 
   // Size, from the structure itself.
@@ -347,7 +355,7 @@ export function buildFacts({ prot, info, wiki, feat }) {
   for (const ch of prot.seq) counts[ch] = (counts[ch] || 0) + 1;
   const [top, topN] = Object.entries(counts).filter(([k]) => AMINO_NAMES[k]).sort((a, b) => b[1] - a[1])[0] || [];
   const mass = info?.mass ? ` It weighs about as much as ${fmt(info.mass)} hydrogen atoms.` : '';
-  if (top) add('What it’s made of', `${fmt(prot.n)} amino acids, picked from the same 20 that every living thing uses. The most common one here is ${AMINO_NAMES[top]}, at ${Math.round((100 * topN) / prot.n)}%.${mass}`, 'From the structure');
+  if (top) add('What it’s made of', `${fmt(prot.n)} amino acids, from the same set of about 20 that all life uses. The most common one here is ${AMINO_NAMES[top]}, at ${Math.round((100 * topN) / prot.n)}%.${mass}`, 'From the structure');
 
   add('Who makes it', organismLine(info?.organism), 'UniProt');
 
@@ -394,10 +402,10 @@ export function buildMarks({ prot, info, feat }) {
       const p = list.sort((x, y) => x - y)[Math.floor(list.length / 2)];
       push(p, p, `Holds ${plainLigand(lig)}`);
     });
-    if (info.signal) push(info.signal.from, info.signal.to, 'Address tag, cut off once delivered');
+    if (info.signal) push(info.signal.from, info.signal.to, 'Address tag, cut off later');
     if (info.transmem.length) {
       const t = info.transmem[Math.floor(info.transmem.length / 2)];
-      push(t.from, t.to, info.transmem.length > 1 ? `Crosses the cell membrane ${info.transmem.length} times` : 'Crosses the cell membrane');
+      push(t.from, t.to, info.transmem.length > 1 ? `Crosses a membrane ${info.transmem.length} times` : 'Crosses a membrane');
     }
     if (marks.length < 3 && info.domains.length) {
       const d = info.domains.filter((x) => x.name)[0];

@@ -69,7 +69,7 @@ export const FEATURED = [
     short: 'Rhodopsin',
     title: 'Rhodopsin',
     organism: 'Human',
-    fact: 'The light sensor in the rod cells of your eyes, the ones that let you see in the dark. Its seven helices weave back and forth through the cell’s outer membrane.',
+    fact: 'The light sensor in the rod cells of your eyes, the cells that let you see in dim light. Its seven helices weave back and forth through the stacked membrane discs inside each rod.',
     marks: [{ from: 296, to: 296, text: 'Lysine 296, where the light catcher attaches' }],
   },
   {
@@ -96,7 +96,7 @@ export const FEATURED = [
     short: 'Luciferase',
     title: 'Firefly luciferase',
     organism: 'Common eastern firefly (Photinus pyralis)',
-    fact: 'How fireflies light up. It burns a small molecule called luciferin and gives off yellow-green light.',
+    fact: 'How fireflies light up. It uses oxygen and ATP, the cell’s fuel, to change a small molecule called luciferin, and the energy comes out as yellow-green light.',
     marks: [],
   },
 ];

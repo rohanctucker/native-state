@@ -26,15 +26,15 @@ export const COLLECTIONS = [
   { id: 'famous', title: 'Famous proteins', blurb: 'The ones with stories: Nobel Prizes, medicines, glowing jellyfish.', famous: true },
   { id: 'body', title: 'Inside your body', blurb: 'Human proteins that carry oxygen, send signals and fight germs.', query: 'organism_id:9606 AND (keyword:KW-0561 OR keyword:KW-0372 OR keyword:KW-0391 OR keyword:KW-0514 OR keyword:KW-0202)' },
   { id: 'senses', title: 'Your senses', blurb: 'How you see, smell, taste and hear.', query: 'organism_id:9606 AND (keyword:KW-0844 OR keyword:KW-0552 OR keyword:KW-0919 OR keyword:KW-1009)' },
-  { id: 'venom', title: 'Venoms and toxins', blurb: 'From snakes, spiders, scorpions and cone snails.', query: 'keyword:KW-0800' },
+  { id: 'venom', title: 'Venoms and toxins', blurb: 'From snakes, spiders, scorpions, cone snails and even bacteria.', query: 'keyword:KW-0800' },
   { id: 'glow', title: 'Glow in the dark', blurb: 'Proteins that make light, from fireflies to deep-sea creatures.', query: 'keyword:KW-0455' },
-  { id: 'cold', title: 'Antifreeze', blurb: 'How some fish, insects and plants survive being frozen.', query: 'keyword:KW-0047' },
+  { id: 'cold', title: 'Antifreeze', blurb: 'How some fish, insects and plants survive icy cold.', query: 'keyword:KW-0047' },
   { id: 'sun', title: 'Powered by sunlight', blurb: 'Photosynthesis, the proteins that feed almost all life.', query: 'keyword:KW-0602' },
   { id: 'germs', title: 'Germ fighters', blurb: 'Natural antibiotics made by animals, plants and microbes.', query: 'keyword:KW-0929' },
   { id: 'allergy', title: 'Allergens', blurb: 'Behind peanut, pollen, dust and cat allergies.', query: 'keyword:KW-0020' },
   { id: 'clock', title: 'Body clocks', blurb: 'Proteins that keep time and tell you when to sleep.', query: 'keyword:KW-0090' },
   { id: 'creatures', title: 'Pick a creature', blurb: 'Choose an animal or plant and hold one of its proteins.', creatures: true },
-  { id: 'unknown', title: 'Never studied', blurb: 'Proteins no one has looked at yet. AlphaFold is the first to show their shape.', unknown: true },
+  { id: 'unknown', title: 'Never studied', blurb: 'Proteins whose job no one has worked out yet. AlphaFold may be the first to show their shape.', unknown: true },
 ];
 
 const shuffle = (arr) => {

@@ -6,8 +6,15 @@
   <title>Native State: hold real AlphaFold proteins</title>
   <meta name="description" content="Pick up, spin and unfold real protein structures from the AlphaFold database, with your hands on camera or your fingers. Every protein comes with sourced facts.">
   <meta name="theme-color" content="#0A1F3A">
+  <meta property="og:type" content="website">
   <meta property="og:title" content="Native State">
-  <meta property="og:description" content="Hold real AlphaFold protein structures in your hands.">
+  <meta property="og:description" content="Pick up, spin and unfold real protein structures predicted by AlphaFold, with your hands on camera. Every grab shows a real fact.">
+  <meta property="og:url" content="https://rohanctucker.github.io/native-state/">
+  <meta property="og:image" content="https://rohanctucker.github.io/native-state/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Native State: hold real AlphaFold proteins in your hands">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
@@ -25,6 +32,7 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
+  <noscript><p class="noscript">Native State needs JavaScript to show proteins in 3D.</p></noscript>
   <canvas id="scene" tabindex="0" role="img" aria-label="3D protein model. Drag to turn it."></canvas>
   <canvas id="overlay" aria-hidden="true"></canvas>
   <video id="cam" playsinline muted aria-hidden="true"></video>
@@ -139,7 +147,7 @@
   </dialog>
 
   <dialog id="intro" class="intro" aria-labelledby="intro-title">
-    <h2 id="intro-title">Every living thing is built from proteins.</h2>
+    <h2 id="intro-title">Every living thing runs on proteins.</h2>
     <p>They’re tiny machines, each folded from one long chain. Their shape decides what they do. In 2020 an AI called AlphaFold learned to predict those shapes, and its database now holds over 200 million of them.</p>
     <p>Pick one up.</p>
     <div class="intro-actions">
@@ -169,7 +177,7 @@
         <li>Tap any point to see which amino acid it is.</li>
       </ul>
       <h3>The three looks</h3>
-      <p><strong>Ribbon</strong> is how scientists usually draw proteins: spirals are helices, flat arrows are strands. <strong>Atoms</strong> shows every atom at its real size, close to how a protein would look if you could see it. <strong>Glow</strong> traces the backbone as a line of light.</p>
+      <p><strong>Ribbon</strong> is how scientists usually draw proteins: spirals are helices, flat arrows are strands. Here they’re estimated from the shape of the backbone. <strong>Atoms</strong> shows every atom except hydrogen at its real size, like the space-filling models chemists build. <strong>Glow</strong> traces the backbone as a line of light.</p>
       <h3>The colors</h3>
       <p>In Ribbon and Glow, color is AlphaFold’s confidence for each amino acid, from 0 to 100. Blue parts are probably right. Yellow and orange parts are guesses, and often have no fixed shape in real life, so here they drift.</p>
       <h3>Unfolding</h3>

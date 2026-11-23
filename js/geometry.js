@@ -330,7 +330,7 @@ export const ELEMENTS = {
 
 export class Atoms {
   // atoms: [{ res, el, rel:[x,y,z] }] where rel is the offset from the residue's CA.
-  constructor(atoms, foldedCA, amp, material) {
+  constructor(atoms, foldedCA, amp, material, detail = 2) {
     const count = (this.count = atoms.length);
     this.res = new Uint32Array(count);
     this.rel = new Float32Array(count * 3);
@@ -345,7 +345,7 @@ export class Atoms {
       abs[j * 3 + 2] = foldedCA[a.res * 3 + 2] + a.rel[2];
     });
     const ao = burial(abs, count, 8);
-    const sphere = new THREE.IcosahedronGeometry(1, count > 9000 ? 1 : 2);
+    const sphere = new THREE.IcosahedronGeometry(1, detail);
     const mesh = (this.mesh = new THREE.InstancedMesh(sphere, material, count));
     mesh.frustumCulled = false;
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
