@@ -69,7 +69,7 @@ export const FEATURED = [
     short: 'Rhodopsin',
     title: 'Rhodopsin',
     organism: 'Human',
-    fact: 'The light sensor in the rod cells of your eyes, the cells that let you see in dim light. Its seven helices weave back and forth through the stacked membrane discs inside each rod.',
+    fact: 'The light sensor in the rod cells of your eyes, the cells that let you see in dim light. Each one sits in the membrane of the tiny discs stacked inside a rod, crossing it seven times.',
     marks: [{ from: 296, to: 296, text: 'Lysine 296, where the light catcher attaches' }],
   },
   {
